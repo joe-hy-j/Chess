@@ -5,6 +5,8 @@ using UnityEngine;
 public class PieceSelected : MonoBehaviour
 {
     private bool isSelected = false;
+
+    private Color originalColor;
     public void Selected()
     {
         isSelected = true;
@@ -20,6 +22,7 @@ public class PieceSelected : MonoBehaviour
     void Start()
     {
         renderer = GetComponent<Renderer>();
+        originalColor = renderer.material.color;
     }
 
     // Update is called once per frame
@@ -33,7 +36,7 @@ public class PieceSelected : MonoBehaviour
         else
         {
             //선택되었지 않으면 원래 색으로 바꾼다.
-            renderer.material.SetColor("_Color", Color.white);
+            renderer.material.SetColor("_Color", originalColor);
         }
     }
 }

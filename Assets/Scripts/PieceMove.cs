@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PieceMove : MonoBehaviour
@@ -14,6 +16,11 @@ public class PieceMove : MonoBehaviour
         Pawn
     }
 
+    public enum Team
+    {
+        White,
+        Black
+    }
 
     public int xPos = 5;
     public int yPos=2;
@@ -21,6 +28,7 @@ public class PieceMove : MonoBehaviour
     public float speed = 1f;
 
     public MoveType moveType = MoveType.King;
+    public Team team = Team.White;
 
     private Vector3 dir;
 
@@ -36,6 +44,8 @@ public class PieceMove : MonoBehaviour
     {
         destination = transform.position;
         isArrive = true;
+
+        BoardManager.SetPieceInBoard(this.gameObject, xPos, yPos);
     }
 
     // Update is called once per frame
@@ -69,7 +79,7 @@ public class PieceMove : MonoBehaviour
             destination = new Vector3(XLocation.GetLocation(x), 0, YLocation.GetLocation(y));
 
             //출발 시작!
-            isArrive = false;
+            isArrive = false; 
             //현재 position을 갱신한다.
             xPos = x;
             yPos = y;
@@ -100,31 +110,13 @@ public class PieceMove : MonoBehaviour
         switch (moveType)
         {
             case MoveType.King:
-                if ((xDistance + yDistance <=2) &&(xDistance == 1 || yDistance == 1))
-                    return true;
-                else
-                    return false;
+                return CheckKingMove(x,y);
             case MoveType.Queen:
-                if ((xDistance == yDistance))
-                    return true;
-                else if(xDistance != 0 && yDistance == 0)
-                    return true;
-                else if(xDistance ==0 && yDistance!=0)
-                    return true;
-                else
-                    return false;
+                return CheckQueenMove(x,y);
             case MoveType.Rook:
-                if (xDistance == 0 && yDistance != 0)
-                    return true;
-                else if (xDistance != 0 && yDistance == 0)
-                    return true;
-                else
-                    return false;
+                return CheckRookMove(x,y);
             case MoveType.Bishop:
-                if (xDistance == yDistance)
-                    return true;
-                else
-                    return false;
+                return CheckBishopMove(x,y);
             case MoveType.Knight:
                 if (xDistance + yDistance == 3 && (xDistance == 1 || yDistance == 1))
                     return true;
@@ -146,7 +138,186 @@ public class PieceMove : MonoBehaviour
             default:
                 return false;
         }
+    }
+    private bool CheckKingMove(int x, int y)
+    {
+        int xDistance;
+        int yDistance;
 
+        xDistance = Mathf.Abs(x - xPos);
+        yDistance = Mathf.Abs(y - yPos);
 
+        if (xDistance == 0 && yDistance == 0)
+        {
+            return false;
+        }
+
+        if ((xDistance + yDistance <= 2) && (xDistance == 1 || yDistance == 1))
+        {
+            if (BoardManager.isAllyPieceExist(x, y, team))
+                return false;
+            else
+                return true;
+        }
+        else
+            return false;
+    }
+
+    private bool CheckQueenMove(int x, int y)
+    {
+        int xDistance;
+        int yDistance;
+
+        xDistance = Mathf.Abs(x - xPos);
+        yDistance = Mathf.Abs(y - yPos);
+
+        if (xDistance == 0 && yDistance == 0)
+        {
+            return false;
+        }
+
+        //대각선 거리에 있을 때
+        if ((xDistance == yDistance))
+        {
+            int xDirection = (x - xPos)/xDistance;
+            int yDirection = (y - yPos)/yDistance;
+            //만약 오는 거리에 상대방/내가 있다면
+            for(int i =1; i<xDistance; i++)
+            {
+                if (BoardManager.isPieceExist(xPos + i*xDirection, yPos + i*yDirection))
+                {
+                    return false;
+                }
+            }
+            //만약 도착 지점에 내 친구가 있다면
+            if (BoardManager.isAllyPieceExist(x, y, team))
+                return false;
+            return true;
+        }
+        //좌우 이동일대
+        else if (xDistance != 0 && yDistance == 0)
+        {
+            int xDirection = (x - xPos) / xDistance;
+            //만약 오는 거리에 상대방/내가 있다면
+            for (int i = 1; i < xDistance; i++)
+            {
+                if (BoardManager.isPieceExist(xPos + i * xDirection, yPos))
+                {
+                    return false;
+                }
+            }
+            //만약 도착 지점에 내 친구가 있다면
+            if (BoardManager.isAllyPieceExist(x, y, team))
+                return false;
+            return true;
+        }
+        //상하 이동일때
+        else if (xDistance == 0 && yDistance != 0)
+        {
+            int yDirection = (y - yPos) / yDistance;
+            //만약 오는 거리에 상대방/내가 있다면
+            for (int i = 1; i < yDistance; i++)
+            {
+                if (BoardManager.isPieceExist(xPos, yPos + i * yDirection))
+                {
+                    return false;
+                }
+            }
+            //만약 도착 지점에 내 친구가 있다면
+            if (BoardManager.isAllyPieceExist(x, y, team))
+                return false;
+            return true;
+        }
+        //다 아닐때
+        else
+            return false;
+    }
+
+    private bool CheckRookMove(int x, int y)
+    {
+        int xDistance;
+        int yDistance;
+
+        xDistance = Mathf.Abs(x - xPos);
+        yDistance = Mathf.Abs(y - yPos);
+
+        if (xDistance == 0 && yDistance == 0)
+        {
+            return false;
+        }
+
+        if (xDistance != 0 && yDistance == 0)
+        {
+            int xDirection = (x - xPos) / xDistance;
+            //만약 오는 거리에 상대방/내가 있다면
+            for (int i = 1; i < xDistance; i++)
+            {
+                if (BoardManager.isPieceExist(xPos + i * xDirection, yPos))
+                {
+                    return false;
+                }
+            }
+            //만약 도착 지점에 내 친구가 있다면
+            if (BoardManager.isAllyPieceExist(x, y, team))
+                return false;
+            return true;
+        }
+        //상하 이동일때
+        else if (xDistance == 0 && yDistance != 0)
+        {
+            int yDirection = (y - yPos) / yDistance;
+            //만약 오는 거리에 상대방/내가 있다면
+            for (int i = 1; i < yDistance; i++)
+            {
+                if (BoardManager.isPieceExist(xPos, yPos + i * yDirection))
+                {
+                    return false;
+                }
+            }
+            //만약 도착 지점에 내 친구가 있다면
+            if (BoardManager.isAllyPieceExist(x, y, team))
+                return false;
+            return true;
+        }
+        //다 아닐때
+        else
+            return false;
+    }
+
+    private bool CheckBishopMove(int x, int y)
+    {
+        int xDistance;
+        int yDistance;
+
+        xDistance = Mathf.Abs(x - xPos);
+        yDistance = Mathf.Abs(y - yPos);
+
+        if (xDistance == 0 && yDistance == 0)
+        {
+            return false;
+        }
+
+        //대각선 거리에 있을 때
+        if ((xDistance == yDistance))
+        {
+            int xDirection = (x - xPos) / xDistance;
+            int yDirection = (y - yPos) / yDistance;
+            //만약 오는 거리에 상대방/내가 있다면
+            for (int i = 1; i < xDistance; i++)
+            {
+                if (BoardManager.isPieceExist(xPos + i * xDirection, yPos + i * yDirection))
+                {
+                    return false;
+                }
+            }
+            //만약 도착 지점에 내 친구가 있다면
+            if (BoardManager.isAllyPieceExist(x, y, team))
+                return false;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
