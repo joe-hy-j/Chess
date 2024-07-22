@@ -32,6 +32,8 @@ public class PieceSelected : MonoBehaviour
         {
             //선택되었으면 색을 바꾼다.
             renderer.material.SetColor("_Color", Color.red);
+
+            //renderer.material.color = Color.red;
         }
         else
         {

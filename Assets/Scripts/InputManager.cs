@@ -1,17 +1,49 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public class PieceClickEventArgs : EventArgs
+{
+    public int hittedPositionX;
+    public int hittedPositionY;
+
+
+    public int boardX;
+    public int boardY;
+
+    public PieceClickEventArgs(int hittedX, int hittedY, int boardX,int boardY)
+    {
+        this.hittedPositionX = hittedX;
+        this.hittedPositionY = hittedY;
+        this.boardX = boardX;  
+        this.boardY = boardY;
+    }
+}
+
 public class InputManager : MonoBehaviour
 {
+    public event EventHandler PieceClick;
 
-    GameObject selectedPieces;
+    //눌린 pieces
+    GameObject hittedPiece;
+    public GameObject selectedObject
+    {
+        get=> hittedPiece;
+    }
+    //눌린 기물의 위치
+    int hittedObjectX;
+    int hittedObjectY;
+
+    //눌린 보드의 위치
+    int boardPositionX;
+    int boardPositionY;
+
     // Start is called before the first frame update
     void Start()
     {
-        selectedPieces = null;
-    }
 
+    }
     // Update is called once per frame
     void Update()
     {
@@ -20,49 +52,37 @@ public class InputManager : MonoBehaviour
 
         if(Physics.Raycast( ray, out hit , 17.0f))
         {
-            // 만약 말이 눌렀으면
-            if ( Input.GetMouseButtonDown(0) && hit.transform != null && hit.transform.gameObject.tag.Equals("Piece"))
+            //만약 무언가가 눌렸을 때
+            if(hit.collider.gameObject != null && Input.GetMouseButtonDown(0))
             {
-                //만약 같은 말을 눌렀으면
-                if(hit.transform.gameObject == selectedPieces)
+                //만약 현재 턴의 기물이 눌렷다면
+                if (hit.collider.gameObject.tag.Contains(GameManager.gm.CurrentTurn.ToString()))
                 {
-                    //선택해제하자
-                    selectedPieces.GetComponent<PieceSelected>()?.Deselected();
-                    selectedPieces = null;
+                    //게임 오브젝트를 저장하고
+                    hittedPiece = hit.collider.gameObject;
+                    //눌린 위치를 arrayNumber로 저장하자
+                    hittedObjectX = PositionConverter.ConvertToArrayNumber(hit.collider.transform.position.x);
+                    hittedObjectY = PositionConverter.ConvertToArrayNumber(hit.collider.transform.position.z);
                 }
-                //다른 말을 눌렀으면
+                //만약 보드가 눌리거나 상대편 기물이 눌렸다면
                 else
                 {
-                    //이전 선택 상태의 말을 해제하자
-                    selectedPieces?.GetComponent<PieceSelected>()?.Deselected();
-
-                    //현재 선택 상태의 말을 정하자
-                    selectedPieces = hit.collider.gameObject;
-
-                    //현재 선택 상태의 말을 선택하자.
-                    selectedPieces.GetComponent<PieceSelected>()?.Selected();
-                }
-
-            }
-
-            // 보드를 눌렀으면
-            if (Input.GetMouseButtonDown(0) && hit.transform!=null && hit.collider.tag.Equals("Board"))
-            {
-                // 말이 선택 상태이고 이동 가능한 곳이라면 
-                if (selectedPieces != null)
-                {
-                    // 보드의 위치를 구해야 한다.
-                    //print(hit.point);
-                    //print(XLocation.GetPosition(hit.point.x)+" "+YLocation.GetPosition(hit.point.z));
-                    // 말을 보드의 위치로 이동시키자.
-                    selectedPieces?.GetComponent<PieceMove>().Move(XLocation.GetPosition(hit.point.x), YLocation.GetPosition(hit.point.z));
-
-                    //그 다음에 선택해제하자
-                    selectedPieces?.GetComponent<PieceSelected>().Deselected();
-                    selectedPieces = null;
+                    //만약 그 전에 선택된 obj 가 있으면
+                    if (hittedPiece != null)
+                    {
+                        //눌린 보드의 위치를 저장한다.
+                        boardPositionX = PositionConverter.ConvertToArrayNumber(hit.point.x);
+                        boardPositionY = PositionConverter.ConvertToArrayNumber(hit.point.z);
+                        //값을 전달한다.
+                        if (PieceClick != null) {
+                            PieceClickEventArgs pieceClickEventArgs = new PieceClickEventArgs(hittedObjectX, hittedObjectY, boardPositionX, boardPositionY);
+                            PieceClick(this, pieceClickEventArgs);
+                        }
+                    }
+                    //선택된 기물을 없앤다
+                    hittedPiece = null;
                 }
             }
-
         }
     }
 }
